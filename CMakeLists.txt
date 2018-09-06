@@ -6,6 +6,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 # Set up include and lib paths
 set(EXTERNAL "external")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 include_directories("${EXTERNAL}/include")
 include_directories("${EXTERNAL}/src")
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
