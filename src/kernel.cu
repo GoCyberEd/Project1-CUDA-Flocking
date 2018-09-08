@@ -236,35 +236,40 @@ __device__ glm::vec3 computeVelocityChange(int N, int iSelf, const glm::vec3 *po
     glm::vec3 c (0.0f, 0.0f, 0.0f);
     glm::vec3 calcVel (0.0f, 0.0f, 0.0f);
 
+    int numInRange = 0;
+
     for (int i = 0; i < N; i++){
         if (iSelf == i) { continue; }
         //get distance
         float d = glm::distance(currentPose, pos[i]);
         if (d > rule1Distance) { continue; }
         center += pos[i];
+        numInRange ++;
     }
-    //center /= 1;// TODO N - 1;
+    center /= (numInRange ? numInRange : 1);
     center -= currentPose;
-    center *= rule1Scale;
+    center *= (rule1Scale ? rule1Scale : 0);
 
     // Rule 2: boids try to stay a distance d away from each other
     for (int i = 0; i < N; i++) {
         if (iSelf != i) { continue; }
         float d = glm::distance(currentPose, pos[i]);
         if (d > rule2Distance) { continue; }
-        c -= (pos[i] - currentPose);
+        c -= (currentPose - pos[i]);
     }
     c *= rule2Scale;
 
     // Rule 3: boids try to match the speed of surrounding boid
+    numInRange = 0;
     for (int i = 0; i < N; i++) {
         if (iSelf != i) { continue; }
         float d = glm::distance(currentPose, pos[i]);
         if (d > rule3Distance) { continue; }
         calcVel += (vel[i]);
+        numInRange ++;
     }
-    //calcVel /= 1;//TODO N - 1;
-    calcVel *= rule3Scale;
+    calcVel /= (numInRange ? numInRange : 1);
+    calcVel *= (rule3Scale ? rule3Scale : 0);
 
     return center + c + calcVel;
 }
@@ -283,7 +288,14 @@ __global__ void kernUpdateVelocityBruteForce(int N, glm::vec3 *pos,
   if (i >= N) { return; }
 
   glm::vec3 newVector = computeVelocityChange(N, i, pos, vel1) + vel1[i];
-  //TODO Limit max speed
+  //limit max speed
+  //glm::clamp(newVector, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(maxSpeed, maxSpeed, maxSpeed)); What's wrong with this?
+  if (glm::length(newVector) > maxSpeed) {
+	  newVector = glm::normalize(newVector) * maxSpeed;
+  }
+  if (newVector.x > maxSpeed || newVector.y > maxSpeed || newVector.z > maxSpeed){
+	  printf("Speed limit exceeded.\n");
+  }
   vel2[i] = newVector;
 }
 
