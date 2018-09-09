@@ -180,8 +180,8 @@ void Boids::initSimulation(int N) {
 	dev_thrust_particleArrayIndices = thrust::device_pointer_cast<int>(dev_particleArrayIndices);
 	dev_thrust_particleGridIndices = thrust::device_pointer_cast<int>(dev_particleGridIndices);
 
-	cudaMalloc((void**) &dev_pos_co, N * sizeof(glm::vec3));
-	cudaMalloc((void**) &dev_vel_co, N * sizeof(glm::vec3));
+	cudaMalloc((void**) &dev_pos_co, sizeof(glm::vec3) * N);
+	cudaMalloc((void**) &dev_vel_co, sizeof(glm::vec3) * N);
 
 
 	cudaDeviceSynchronize();
@@ -802,6 +802,13 @@ void Boids::endSimulation() {
 	cudaFree(dev_pos);
 
 	// TODO-2.1 TODO-2.3 - Free any additional buffers here.
+	cudaFree(dev_particleGridIndices);
+	cudaFree(dev_particleArrayIndices);
+	cudaFree(dev_gridCellStartIndices);
+	cudaFree(dev_gridCellEndIndices);
+
+	cudaFree(dev_pos_co);
+	cudaFree(dev_vel_co);
 }
 
 void Boids::unitTest() {
