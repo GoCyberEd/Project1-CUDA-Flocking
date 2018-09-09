@@ -611,10 +611,10 @@ __global__ void kernUpdateVelNeighborSearchCoherent(
 			int start = gridCellStartIndices[ neighbors[i] ];
 			int end = gridCellEndIndices[ neighbors[i] ];
 
-			// End index is INCLUSIVE (and if not, the distance check will filter anyway)
+			// End index is EXCLUSIVE (otherwise we get a MAE)
 			// Could factor this function out to a loop and share between 1.2 and here
 			// (would only need slight tweak to computeVelocityChange)
-			for (int j = start; j <= end; j ++) {
+			for (int j = start; j < end; j ++) {
 				b = j;
 				if (linearIndex != j) {
 					float distance = glm::distance(currentPos, pos[b]);
@@ -788,10 +788,10 @@ void Boids::stepSimulationCoherentGrid(float dt) {
 		checkCUDAErrorWithLine("stepSimulationScatteredGrid :: kernUpdateVelNeighborSearchScattered");
 
 		//Update the sim state
-		kernUpdatePos <<< blocksPerGrid, blockSize >>> (numObjects, dt, dev_pos, dev_vel2);
+		kernUpdatePos <<< blocksPerGrid, blockSize >>> (numObjects, dt, dev_pos, dev_vel1);
 		checkCUDAErrorWithLine("stepSimulationScatteredGrid :: kernUpdatePos");
 
-		std::swap(dev_vel1, dev_vel_co);
+		std::swap(dev_vel_co, dev_vel2);
 		std::swap(dev_pos, dev_pos_co);
 }
 
