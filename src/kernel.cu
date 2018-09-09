@@ -438,8 +438,8 @@ __device__ void calculateBoidNeighborCells(int neighbors[8], glm::vec3 spacialIn
 	diffs[2] = glm::ivec3(0, y, 0);
 	diffs[3] = glm::ivec3(0, 0, z);
 	diffs[4] = glm::ivec3(x, y, 0);
-	diffs[5] = glm::ivec3(0, x, y);
-	diffs[6] = glm::ivec3(x, 0, y);
+	diffs[5] = glm::ivec3(0, y, z);
+	diffs[6] = glm::ivec3(x, 0, z);
 	diffs[7] = glm::ivec3(x, y, z);
 
 	//Filter any of the values that fall out of range
@@ -481,7 +481,9 @@ __global__ void kernUpdateVelNeighborSearchScattered(
 
 	int linearIndex = particleArrayIndices[index];
 	//x by y by z grid, but only 1d particle index -- need to convert back
-	glm::vec3 spacialIndex = gridIndex1Dto3D(gridMin, inverseCellWidth, pos[linearIndex]);
+	glm::vec3 spacialIndex = pos[linearIndex];
+	spacialIndex -= gridMin;
+	spacialIndex *= inverseCellWidth;
 
 	int neighbors[8];
 	calculateBoidNeighborCells(neighbors, spacialIndex, gridResolution);
