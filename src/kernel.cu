@@ -756,6 +756,13 @@ void Boids::stepSimulationCoherentGrid(float dt) {
   // - Ping-pong buffers as needed. THIS MAY BE DIFFERENT FROM BEFORE.
 
 		int blocksPerGrid = (numObjects + blockSize - 1) / blockSize;
+
+		//Ensure array is totally reset, preventing old values from sticking
+		kernResetIntBuffer <<< blocksPerGrid, blockSize >>> (numObjects, dev_gridCellEndIndices, -1);
+		checkCUDAErrorWithLine("stepSimulationScatteredGrid :: kernResetIntBuffer (end)");
+		kernResetIntBuffer <<< blocksPerGrid, blockSize >>> (numObjects, dev_gridCellStartIndices, -1);
+		checkCUDAErrorWithLine("stepSimulationScatteredGrid :: kernResetIntBuffer (start)");
+
 		kernComputeIndices <<< blocksPerGrid, blockSize >>> (
 				numObjects, gridSideCount, gridMinimum, gridInverseCellWidth,
 				dev_pos, dev_particleArrayIndices, dev_particleGridIndices);
@@ -764,12 +771,6 @@ void Boids::stepSimulationCoherentGrid(float dt) {
 		//Sort
 		thrust::sort_by_key(dev_thrust_particleGridIndices, dev_thrust_particleGridIndices + numObjects, dev_thrust_particleArrayIndices);
 		checkCUDAErrorWithLine("stepSimulationScatteredGrid :: thrust :: sort_by_key");
-
-		//Ensure array is totally reset, preventing old values from sticking
-		kernResetIntBuffer <<< blocksPerGrid, blockSize >>> (numObjects, dev_gridCellEndIndices, -1);
-		checkCUDAErrorWithLine("stepSimulationScatteredGrid :: kernResetIntBuffer (end)");
-		kernResetIntBuffer <<< blocksPerGrid, blockSize >>> (numObjects, dev_gridCellStartIndices, -1);
-		checkCUDAErrorWithLine("stepSimulationScatteredGrid :: kernResetIntBuffer (start)");
 
 		//Recalculate the reset arrays (why can we do this in paralell with the above reset? are kernel launches sequential?)
 		kernIdentifyCellStartEnd <<< blocksPerGrid, blockSize >>> (
@@ -784,11 +785,11 @@ void Boids::stepSimulationCoherentGrid(float dt) {
 		kernUpdateVelNeighborSearchCoherent <<< blocksPerGrid, blockSize >>>
 				(numObjects, gridSideCount, gridMinimum, gridInverseCellWidth,
 						gridCellWidth, dev_gridCellStartIndices, dev_gridCellEndIndices,
-						dev_pos_co, dev_vel_co, dev_vel2);
+						dev_pos_co, dev_vel_co, dev_vel1);
 		checkCUDAErrorWithLine("stepSimulationScatteredGrid :: kernUpdateVelNeighborSearchScattered");
 
 		//Update the sim state
-		kernUpdatePos <<< blocksPerGrid, blockSize >>> (numObjects, dt, dev_pos, dev_vel1);
+		kernUpdatePos <<< blocksPerGrid, blockSize >>> (numObjects, dt, dev_pos_co, dev_vel1);
 		checkCUDAErrorWithLine("stepSimulationScatteredGrid :: kernUpdatePos");
 
 		std::swap(dev_vel_co, dev_vel2);
