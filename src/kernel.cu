@@ -342,6 +342,16 @@ __global__ void kernComputeIndices(int N, int gridResolution,
     // - Label each boid with the index of its grid cell.
     // - Set up a parallel array of integer indices as pointers to the actual
     //   boid data in pos and vel1/vel2
+
+	//Get index
+	int i = threadIdx.x + blockIdx.x * blockDim.x;
+
+	if (i < N) {
+		indices[i] = i;
+
+		glm::ivec3 gridCells = inverseCellWidth * (-gridMin + pos[i]);
+		gridIndices[i] = gridIndex3Dto1D(gridCells.x, gridCells.y, gridCells.z, gridResolution);
+	}
 }
 
 // LOOK-2.1 Consider how this could be useful for indicating that a cell
@@ -358,7 +368,28 @@ __global__ void kernIdentifyCellStartEnd(int N, int *particleGridIndices,
   // TODO-2.1
   // Identify the start point of each cell in the gridIndices array.
   // This is basically a parallel unrolling of a loop that goes
-  // "this index doesn't match the one before it, must be a new cell!"
+  // this index doesn't match the one before it, must be a new cell!
+
+	int i = threadIdx.x + blockIdx.x * blockDim.x;
+
+	//Check if last entry
+	if (i > 0 && i == N - 1){
+		gridCellEndIndices[ particleGridIndices[i] ] = i;
+	}
+
+	//Check if first entry and return (i - 1 would be negative)
+	if (i == 0) {
+		gridCellStartIndices[ particleGridIndices[i] ] = i;
+		return;
+	}
+
+	if (i < N) {
+		if (particleGridIndices[i - 1] != particleGridIndices[i]) {
+			gridCellEndIndices[ particleGridIndices[i - 1] ] = i - 1;
+			gridCellStartIndices[ particleGridIndices[i] ] = i;
+		}
+	}
+
 }
 
 __global__ void kernUpdateVelNeighborSearchScattered(
