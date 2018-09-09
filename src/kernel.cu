@@ -171,8 +171,8 @@ void Boids::initSimulation(int N) {
   // TODO-2.1 TODO-2.3 - Allocate additional buffers here.
   cudaMalloc((void**) &dev_particleGridIndices, sizeof(int) * N);
   cudaMalloc((void**) &dev_particleArrayIndices, sizeof(int) * N);
-  cudaMalloc((void**) &dev_gridCellStartIndices, sizeof(int) * N);
-  cudaMalloc((void**) &dev_gridCellEndIndices, sizeof(int) * N);
+  cudaMalloc((void**) &dev_gridCellStartIndices, sizeof(int) * gridCellCount);
+  cudaMalloc((void**) &dev_gridCellEndIndices, sizeof(int) * gridCellCount);
 
   //Thrust inits
   dev_thrust_particleArrayIndices = thrust::device_pointer_cast<int>(dev_particleArrayIndices);
