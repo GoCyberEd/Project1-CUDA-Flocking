@@ -230,48 +230,49 @@ void Boids::copyBoidsToVBO(float *vbodptr_positions, float *vbodptr_velocities) 
 * in the `pos` and `vel` arrays.
 */
 __device__ glm::vec3 computeVelocityChange(int N, int iSelf, const glm::vec3 *pos, const glm::vec3 *vel) {
-    // Rule 1: boids fly towards their local perceived center of mass, which excludes themselves
-    glm::vec3 currentPose = pos[iSelf];
-    glm::vec3 center (0.0f, 0.0f, 0.0f);
-    glm::vec3 c (0.0f, 0.0f, 0.0f);
-    glm::vec3 calcVel (0.0f, 0.0f, 0.0f);
 
-    int numInRange = 0;
+	glm::vec3 center (0.0f, 0.0f, 0.0f);
+	int numRule1 = 0;
+	glm::vec3 c (0.0f, 0.0f, 0.0f);
+	glm::vec3 perceived_velocity (0.0f, 0.0f, 0.0f);
+	int numRule3 = 0;
 
-    for (int i = 0; i < N; i++){
-        if (iSelf == i) { continue; }
-        //get distance
-        float d = glm::distance(currentPose, pos[i]);
-        if (d > rule1Distance) { continue; }
-        center += pos[i];
-        numInRange ++;
-    }
-    center /= (numInRange ? numInRange : 1);
-    center -= currentPose;
-    center *= (rule1Scale ? rule1Scale : 0);
+	for (int i = 0; i < N; i++) {
+		if (iSelf != i) {
+			float distance = glm::distance(pos[iSelf], pos[i]);
 
-    // Rule 2: boids try to stay a distance d away from each other
-    for (int i = 0; i < N; i++) {
-        if (iSelf != i) { continue; }
-        float d = glm::distance(currentPose, pos[i]);
-        if (d > rule2Distance) { continue; }
-        c -= (currentPose - pos[i]);
-    }
-    c *= rule2Scale;
+			// Rule 1: boids fly towards their local perceived center of mass, which excludes themselves
+			if (distance < rule1Distance) {
+				center += pos[i];
+				numRule1 ++;
+			}
 
-    // Rule 3: boids try to match the speed of surrounding boid
-    numInRange = 0;
-    for (int i = 0; i < N; i++) {
-        if (iSelf != i) { continue; }
-        float d = glm::distance(currentPose, pos[i]);
-        if (d > rule3Distance) { continue; }
-        calcVel += (vel[i]);
-        numInRange ++;
-    }
-    calcVel /= (numInRange ? numInRange : 1);
-    calcVel *= (rule3Scale ? rule3Scale : 0);
+			// Rule 2: boids try to stay a distance d away from each other
+			if (distance < rule2Distance) {
+				c -= (pos[i] - pos[iSelf]);
+			}
 
-    return center + c + calcVel;
+			// Rule 3: boids try to match the speed of surrounding boid
+			if (distance < rule3Distance) {
+				perceived_velocity += vel[i];
+				numRule3 ++;
+			}
+		}
+	}
+
+	if (numRule1) {
+		center /= numRule1;
+		center = (center - pos[iSelf]) * rule1Scale;
+	}
+
+	c *= rule2Scale;
+
+	if (numRule3) {
+		perceived_velocity /= numRule3;
+		perceived_velocity *= rule3Scale;
+	}
+
+	return center + c + perceived_velocity;
 }
 
 /**
