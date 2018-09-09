@@ -16,6 +16,16 @@ Project 1 - Flocking
 
 ## Performance
 
+#### Methodology
+
+The FPS numbers shown in the graph below are all with vsync off. I noticed the FPS tended to have much less fluctuations after running for a minute. Thus, the process for calculating the FPS numbers is as follows:
+
+1. Ensure code is in release mode
+2. Modify any desired settings (block size, display, etc)
+3. Launch the simulation and wait 1 minute
+4. After 1 minute, track the highest and lowest FPS observed over the next 20 seconds
+5. Take the average of the two extremes noted in step 4
+
 #### Number of Boids
 
 ![Number of boids with display off](images/performance-boids-disabled.png)
