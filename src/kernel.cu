@@ -545,7 +545,7 @@ __global__ void kernUpdateVelNeighborSearchScattered(
 		perceived_velocity *= rule3Scale;
 	}
 
-	glm::vec3 newVector = center + c + perceived_velocity;
+	glm::vec3 newVector = center + c + perceived_velocity + vel1[linearIndex];
 
 	//"clamp" and update
 	if (glm::length(newVector) > maxSpeed) {
